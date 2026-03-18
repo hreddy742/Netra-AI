@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netra-config
+  namespace: netra
+  labels:
+    app.kubernetes.io/name: netra-ai
+    app.kubernetes.io/component: config
+data:
+  # System
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+  MODEL_VERSION: "1.0.0"
+  LOGIC_VERSION: "1.0.0"
+
+  # Redis
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_POOL_SIZE: "20"
+
+  # PostgreSQL
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "netra"
+  POSTGRES_USER: "netra"
+
+  # SHM ring buffer
+  SHM_NUM_SLOTS: "8"
+  SHM_FRAME_HEIGHT: "720"
+  SHM_FRAME_WIDTH: "1280"
+
+  # Inference
+  DETECTOR_MODEL_PATH: "/models/yolov8n.pt"
+  POSE_MODEL_PATH: "/models/yolov8n-pose.pt"
+  DETECTION_CONF: "0.35"
+  DETECTION_IOU: "0.45"
+  DETECTOR_DEVICE: "cuda"
+
+  # Tracking
+  TRACKER_MAX_AGE: "30"
+  TRACKER_MIN_HITS: "3"
+  TRACKER_IOU_THRESHOLD: "0.3"
+
+  # Association
+  HAND_TO_HIP_DISTANCE_PX: "110.0"
+  N_FRAMES_HAND_IN_SHELF: "4"
+  CONCEAL_WINDOW_SEC: "4.0"
+  SPEED_SPIKE_MULTIPLIER: "2.5"
+  ZONE_CONFIG_PATH: "/config/zones.json"
+
+  # Behavior / FSM
+  FSM_RISK_THRESHOLD: "8.0"
+  FSM_DECAY_RATE: "1.8"
+  FSM_SHOPFORMER_TRIGGER_SCORE: "4.0"
+
+  # Risk engine
+  RISK_WEIGHT_FSM: "0.45"
+  RISK_WEIGHT_SHOPFORMER: "0.30"
+  RISK_WEIGHT_INTERACTION: "0.20"
+  RISK_WEIGHT_CONTEXT: "0.05"
+  RISK_ALERT_THRESHOLD: "0.65"
+
+  # Evidence
+  EVIDENCE_DIR: "/data/evidence"
+  CLIP_PRE_EVENT_SEC: "10.0"
+  CLIP_POST_EVENT_SEC: "5.0"
+  EVIDENCE_RETENTION_DAYS: "30"
+
+  # Gateway / API
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRE_MINUTES: "1440"
+
+  # Streaming
+  MJPEG_JPEG_QUALITY: "75"
+  MJPEG_TARGET_FPS: "10.0"
+  SSE_MAX_CLIENTS_PER_CAMERA: "20"
+
+  # Backpressure
+  MAX_QUEUE_DEPTH_PER_CAMERA: "30"
+  INFERENCE_MAX_FRAME_AGE_MS: "500"
+  INFERENCE_MAX_CONCURRENT: "4"
+  ADAPTIVE_FPS_ENABLED: "true"
+  ADAPTIVE_FPS_MIN: "2.0"
+  ADAPTIVE_FPS_TARGET_LATENCY_MS: "200"
+
+  # Phase 8 — Performance
+  GPU_JPEG_ENCODE: "true"
+  WS_SHARD_COUNT: "2"
+  BROADCASTER_PATTERN_SUB: "true"
+  REDIS_RECONNECT_MAX_DELAY: "30.0"
+  REDIS_CIRCUIT_FAIL_THRESH: "5"
+
+  # Observability
+  METRICS_PORT: "9090"
+  METRICS_ENABLED: "true"

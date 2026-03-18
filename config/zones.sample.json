@@ -1,0 +1,30 @@
+{
+  "camera_id": "cam-01",
+  "zones": [
+    {
+      "name": "shelf_zone",
+      "type": "SHELF",
+      "polygon": [[50, 100], [400, 100], [400, 500], [50, 500]]
+    },
+    {
+      "name": "exit_zone",
+      "type": "EXIT",
+      "polygon": [[1100, 0], [1280, 0], [1280, 720], [1100, 720]]
+    },
+    {
+      "name": "bagging_zone",
+      "type": "BAGGING",
+      "polygon": [[600, 400], [900, 400], [900, 650], [600, 650]]
+    },
+    {
+      "name": "scanner_zone",
+      "type": "SCANNER",
+      "polygon": [[650, 420], [850, 420], [850, 580], [650, 580]]
+    },
+    {
+      "name": "counter_zone",
+      "type": "COUNTER",
+      "polygon": [[500, 350], [950, 350], [950, 700], [500, 700]]
+    }
+  ]
+}

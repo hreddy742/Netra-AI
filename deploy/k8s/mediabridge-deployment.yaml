@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mediabridge
+  namespace: netra
+  labels:
+    app.kubernetes.io/name: netra-ai
+    app.kubernetes.io/component: mediabridge
+spec:
+  # 1 replica per camera group — scale manually per deployment
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: mediabridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netra-ai
+        app.kubernetes.io/component: mediabridge
+    spec:
+      # Required for SHM access between mediabridge and inference
+      hostIPC: true
+      containers:
+        - name: mediabridge
+          image: netra-ai/mediabridge:latest
+          command: ["python", "-m", "backend.services.mediabridge.main"]
+          envFrom:
+            - configMapRef:
+                name: netra-config
+            - secretRef:
+                name: netra-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: netra-config

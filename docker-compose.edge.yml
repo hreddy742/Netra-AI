@@ -1,0 +1,92 @@
+# Netra AI — Edge deployment (offline mode)
+# Minimal stack: Redis (local only) + Postgres (local) + core pipeline
+# No Grafana, no external monitoring, no cloud dependencies.
+
+version: "3.9"
+
+x-edge-base: &edge-base
+  build:
+    context: .
+    dockerfile: infra/docker/Dockerfile.base
+  env_file: .env.edge
+  environment:
+    NETRA_EDGE: "1"
+  networks:
+    - netra-edge
+  restart: unless-stopped
+  volumes:
+    - evidence_data:/data/evidence
+    - edge_queue:/data/edge_queue
+    - model_cache:/models
+    - ./config:/config:ro
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
+    networks:
+      - netra-edge
+    volumes:
+      - redis_edge_data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-netra}
+      POSTGRES_USER:     ${POSTGRES_USER:-netra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-netra_secret}
+    networks:
+      - netra-edge
+    volumes:
+      - postgres_edge_data:/var/lib/postgresql/data
+
+  mediabridge:
+    <<: *edge-base
+    command: python -m backend.services.mediabridge.main
+    ipc: host
+
+  inference:
+    <<: *edge-base
+    command: python -m backend.services.inference.main
+    ipc: host
+
+  association:
+    <<: *edge-base
+    command: python -m backend.services.association.main
+
+  behavior:
+    <<: *edge-base
+    command: python -m backend.services.behavior.main
+
+  risk:
+    <<: *edge-base
+    command: python -m backend.services.risk.main
+
+  alerting:
+    <<: *edge-base
+    command: python -m backend.services.alerting.main
+
+  persistence:
+    <<: *edge-base
+    command: python -m backend.services.persistence.main
+
+  gateway:
+    <<: *edge-base
+    command: uvicorn backend.gateway.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+
+networks:
+  netra-edge:
+    driver: bridge
+
+volumes:
+  redis_edge_data:
+  postgres_edge_data:
+  evidence_data:
+  edge_queue:
+  model_cache:

@@ -1,0 +1,38 @@
+groups:
+  - name: netra_alerts
+    rules:
+      - alert: NetraServiceDown
+        expr: netra_service_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Netra service {{ $labels.service }} is down"
+          description: "Service {{ $labels.service }} has been down for > 30 seconds"
+
+      - alert: NetraHighDropRate
+        expr: netra:drop_rate:rate1m > 0.3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High frame drop rate on camera {{ $labels.camera_id }}"
+          description: "Camera {{ $labels.camera_id }} dropping > 30% of frames"
+
+      - alert: NetraHighInferenceLatency
+        expr: netra:inference_latency_p95 > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High inference latency"
+          description: "p95 inference latency > 500ms for camera {{ $labels.camera_id }}"
+
+      - alert: NetraQueueBacklog
+        expr: netra_queue_depth > 20
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Camera {{ $labels.camera_id }} queue backing up"
+          description: "Queue depth {{ $value }} > 20 frames"

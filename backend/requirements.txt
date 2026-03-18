@@ -1,0 +1,45 @@
+# Netra AI — backend Python dependencies
+
+# Core async framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# Redis
+redis[hiredis]==5.2.0
+
+# PostgreSQL
+asyncpg==0.30.0
+
+# Computer Vision
+ultralytics==8.3.50
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+onnxruntime==1.20.1          # CPU; swap for onnxruntime-gpu on CUDA hosts
+boxmot                       # OcSort tracker + ReID (osnet_x0_25 downloads on first use)
+
+# Deep Learning (ShopFormer)
+torch==2.5.1
+torchvision==0.20.1
+
+# HTTP clients (alerting)
+httpx==0.28.1
+
+# Auth
+PyJWT==2.10.1
+bcrypt==4.2.1
+
+# Geometry (zone intersection)
+shapely==2.0.6
+
+# Logging
+loguru==0.7.3
+
+# Prometheus
+prometheus-client==0.21.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.28.1

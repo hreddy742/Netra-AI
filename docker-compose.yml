@@ -1,0 +1,192 @@
+version: "3.9"
+
+# ============================================================
+# Netra AI — full stack docker-compose
+# ============================================================
+# Services:
+#   Infrastructure: redis, postgres
+#   Backend:        mediabridge, inference, association,
+#                   behavior, shopformer, risk, alerting,
+#                   persistence, streaming, gateway
+#   Frontend:       frontend (Next.js)
+# ============================================================
+
+x-backend-base: &backend-base
+  build:
+    context: .
+    dockerfile: infra/docker/Dockerfile.base
+  env_file: .env
+  networks:
+    - netra
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+  volumes:
+    - evidence_data:/data/evidence
+    - model_cache:/models
+    - ./config:/config:ro
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - netra
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-netra}
+      POSTGRES_USER:     ${POSTGRES_USER:-netra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-netra_secret}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-netra}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - netra
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ── Backend services ────────────────────────────────────
+
+  mediabridge:
+    <<: *backend-base
+    command: python -m backend.services.mediabridge.main
+    ipc: host   # required for SHM between mediabridge and inference
+
+  inference:
+    <<: *backend-base
+    command: python -m backend.services.inference.main
+    ipc: host   # attaches to same SHM namespace as mediabridge
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  association:
+    <<: *backend-base
+    command: python -m backend.services.association.main
+
+  behavior:
+    <<: *backend-base
+    command: python -m backend.services.behavior.main
+
+  shopformer:
+    <<: *backend-base
+    command: python -m backend.services.shopformer.main
+
+  risk:
+    <<: *backend-base
+    command: python -m backend.services.risk.main
+
+  alerting:
+    <<: *backend-base
+    command: python -m backend.services.alerting.main
+
+  persistence:
+    <<: *backend-base
+    command: python -m backend.services.persistence.main
+
+  gateway:
+    <<: *backend-base
+    command: uvicorn backend.gateway.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+      - "9090:9090"   # Prometheus scrape target
+
+  # ── Frontend ────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_WS_URL:  ws://localhost:8000
+    ports:
+      - "3000:3000"
+    networks:
+      - netra
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+  # ── Observability ────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./deploy/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"
+    networks:
+      - netra
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-netra_grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3001
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - netra
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks:
+      - netra
+    restart: unless-stopped
+
+# ── Networks & Volumes ──────────────────────────────────────
+
+networks:
+  netra:
+    driver: bridge
+
+volumes:
+  redis_data:
+  postgres_data:
+  evidence_data:
+  model_cache:
+  prometheus_data:
+  grafana_data:

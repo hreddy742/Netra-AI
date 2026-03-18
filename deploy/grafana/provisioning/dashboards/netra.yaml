@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: Netra AI
+    orgId: 1
+    folder: Netra
+    folderUid: netra
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards

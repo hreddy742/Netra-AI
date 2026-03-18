@@ -1,0 +1,31 @@
+groups:
+  - name: netra_recording_rules
+    interval: 15s
+    rules:
+      # FPS per camera (1-minute rate)
+      - record: netra:fps_per_camera:rate1m
+        expr: rate(netra_frames_processed_total[1m])
+
+      # Drop rate per camera
+      - record: netra:drop_rate:rate1m
+        expr: rate(netra_frames_dropped_total[1m])
+
+      # Inference latency p50/p95/p99
+      - record: netra:inference_latency_p50
+        expr: histogram_quantile(0.50, rate(netra_inference_duration_seconds_bucket[5m]))
+      - record: netra:inference_latency_p95
+        expr: histogram_quantile(0.95, rate(netra_inference_duration_seconds_bucket[5m]))
+      - record: netra:inference_latency_p99
+        expr: histogram_quantile(0.99, rate(netra_inference_duration_seconds_bucket[5m]))
+
+      # Incidents per minute
+      - record: netra:incidents_per_minute
+        expr: rate(netra_incidents_total[1m]) * 60
+
+      # Total active cameras (cameras with frames in last 60s)
+      - record: netra:active_cameras
+        expr: count(rate(netra_frames_ingested_total[60s]) > 0)
+
+      # Broadcaster FPS average across all cameras
+      - record: netra:broadcaster_fps_avg
+        expr: avg(netra_broadcaster_fps)
