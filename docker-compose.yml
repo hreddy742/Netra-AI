@@ -53,7 +53,7 @@ services:
     environment:
       POSTGRES_DB:       ${POSTGRES_DB:-netra}
       POSTGRES_USER:     ${POSTGRES_USER:-netra}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-netra_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     ports:
       - "5432:5432"
     healthcheck:
@@ -154,7 +154,7 @@ services:
   grafana:
     image: grafana/grafana:10.4.0
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-netra_grafana}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD in .env}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_ROOT_URL: http://localhost:3001
     volumes:
