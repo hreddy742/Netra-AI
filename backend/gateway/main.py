@@ -50,6 +50,8 @@ except ImportError:
 
 def _create_token(user_id: str, role: str) -> str:
     if not _HAS_JWT:
+        if settings.environment != "development":
+            raise RuntimeError("PyJWT is required to issue tokens outside development")
         return "dev-token"
     payload = {
         "sub": user_id,
@@ -60,8 +62,15 @@ def _create_token(user_id: str, role: str) -> str:
 
 
 def _verify_token(token: str) -> dict:
-    if not _HAS_JWT or token == "dev-token":
-        return {"sub": "dev", "role": "admin"}
+    # The "dev-token" bypass is intentionally scoped to development only — it
+    # must never grant access in staging/production even if PyJWT is missing
+    # or a client happens to send that literal string.
+    if token == "dev-token":
+        if settings.environment == "development":
+            return {"sub": "dev", "role": "admin"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    if not _HAS_JWT:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token verification unavailable")
     try:
         return pyjwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except Exception as e:
