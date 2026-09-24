@@ -18,12 +18,13 @@ def test_passthrough_when_required_1():
     assert buf.filter(evs, "test-cam") == evs
 
 
-def test_blocks_first_n_minus_1_frames():
+def test_confirms_at_majority_threshold():
+    # required=3 -> majority = ceil(3/2) = 2, per the documented majority-vote
+    # design (settings.signal_confirmation_frames: "majority-vote window").
     buf = SignalConfirmationBuffer(required=3)
     ev = _ev()
-    assert buf.filter([ev], "test-cam") == []  # frame 1
-    assert buf.filter([ev], "test-cam") == []  # frame 2
-    result = buf.filter([ev], "test-cam")      # frame 3
+    assert buf.filter([ev], "test-cam") == []  # frame 1: 1/3, below majority
+    result = buf.filter([ev], "test-cam")      # frame 2: 2/3, majority reached
     assert len(result) == 1
 
 
