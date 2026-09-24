@@ -3,7 +3,7 @@ AlertPriority — score and rank incidents for operator attention queue.
 
 Priority = severity_weight * risk_score + stage_bonus - time_decay
 
-  severity_weight : CRITICAL=2.0, HIGH=1.5, MEDIUM=1.0, LOW=0.5
+  severity_weight : CRITICAL=2.5, HIGH=1.5, MEDIUM=1.0, LOW=0.5
   stage_bonus     : EXIT_AFTER_CONCEALMENT=+0.3, CONCEALMENT=+0.2, else 0
   time_decay      : -0.01 per minute since incident (older = lower priority)
 
@@ -29,7 +29,7 @@ class AlertPriority(IntEnum):
 
 
 _SEVERITY_WEIGHTS: dict[str, float] = {
-    "CRITICAL": 2.0,
+    "CRITICAL": 2.5,
     "HIGH":     1.5,
     "MEDIUM":   1.0,
     "LOW":      0.5,
