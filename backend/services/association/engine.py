@@ -265,4 +265,19 @@ def _items_near_bbox(
 
 
 def _bbox_overlap(a: BBox, b: BBox, threshold: float) -> bool:
-    return a.iou(b) >= threshold
+    """Fraction of b (the smaller item bbox) that falls inside a (the person bbox).
+
+    Standard IoU under-counts here: a person bbox is an order of magnitude
+    larger than an item bbox, so even full containment of the item never
+    reaches a typical IoU threshold. Containment ratio (intersection / b's
+    area) is the correct check for "is this item inside the person's bbox".
+    """
+    ix1 = max(a.x1, b.x1)
+    iy1 = max(a.y1, b.y1)
+    ix2 = min(a.x2, b.x2)
+    iy2 = min(a.y2, b.y2)
+    if ix2 <= ix1 or iy2 <= iy1:
+        return False
+    inter = (ix2 - ix1) * (iy2 - iy1)
+    b_area = b.width * b.height
+    return (inter / b_area if b_area > 0 else 0.0) >= threshold
